@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  /* Medical Palette */
+  --color-medical-50: #f0fdfa;
+  --color-medical-100: #ccfbf1;
+  --color-medical-500: #14b8a6;
+  --color-medical-600: #0d9488;
+  --color-medical-900: #134e4a;
+  
+  /* Glassmorphism custom blur */
+  --blur-medical: 12px;
+}
+
+/* Custom Utilities */
+@utility glass-card {
+  background-color: rgb(255 255 255 / 0.2);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgb(255 255 255 / 0.3);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  border-radius: 1rem;
+}
+
+@utility glass-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: rgb(255 255 255 / 0.1);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgb(255 255 255 / 0.2);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom); /* Handles mobile home bars */
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+}
