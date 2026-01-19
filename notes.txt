@@ -125,6 +125,55 @@ DATA DICTIONARY: Labeled Nutrition Dataset (NHANES 2017-2018) [ National Health 
       classifier to identify overall nutritional risk.
 --------------------------------------------------------------------------------
 
-React code for a "Result Dashboard" that turns 
-that raw JSON feedback into a professional-looking 
-clinical report?
+PROJECT: NutriPredict AI - Frontend Development Phase
+STUDENT: Victor Mwendia Macharia
+SUPERVISOR: Dr. Monica
+DATE: January 19, 2026
+
+--------------------------------------------------------------------------------
+1. TECH STACK & ARCHITECTURE
+--------------------------------------------------------------------------------
+- Framework: React 18 with TypeScript (Vite template).
+- Styling: Tailwind CSS v4.0 (utilizing the new @theme and @utility engine).
+- Icons: Lucide-React for clinical/medical iconography.
+- State Management: React Hooks (useState) for view switching and form handling.
+- API Client: Axios for asynchronous communication with the Render-hosted API.
+
+--------------------------------------------------------------------------------
+2. UI/UX DESIGN STRATEGY (MEDICAL GLASSMORPHISM)
+--------------------------------------------------------------------------------
+- Aesthetic: "Medical Shade" palette (Teal/Cyan/Slate).
+- Glassmorphism: Implemented semi-transparent containers (white/20) with 
+  backdrop-blur (12px) to simulate a clean, clinical laboratory environment.
+- Responsiveness: Mobile-first approach using Tailwind breakpoints (sm, md, lg)
+  to ensure the CDSS is accessible on tablets and mobile devices in clinics.
+
+--------------------------------------------------------------------------------
+3. COMPONENT BREAKDOWN
+--------------------------------------------------------------------------------
+- App.tsx: The central controller using conditional rendering to manage 
+  the Landing -> Login -> Dashboard workflow.
+- Landing.tsx: Academic showcase highlighting the use of NHANES 2017-2018 
+  data and Random Forest algorithms.
+- Login.tsx: Secured entry gate using hardcoded clinical credentials for 
+  authorized personnel access.
+- Dashboard.tsx: The core diagnostic engine. Features a 2-part layout:
+    * Assessment Form: Inputs for Age, Gender, and Nutrient Intakes.
+    * Clinical Report: Dynamic risk visualization (High/Low), confidence 
+      percentages, and evidence-based recommendations.
+
+--------------------------------------------------------------------------------
+4. DATA INTEGRITY & VALIDATION
+--------------------------------------------------------------------------------
+- TypeScript Interfaces: Created strict types for PredictionRequest and 
+  PredictionResponse to ensure frontend-backend data parity.
+- Input Constraints: Implemented select-dropdowns for Gender (Mapping 1/2) 
+  and numeric constraints for age/intake to match NHANES variable ranges.
+
+--------------------------------------------------------------------------------
+5. DEPLOYMENT PREPARATION
+--------------------------------------------------------------------------------
+- Build Tool: Vite optimized build (npm run build).
+- Hosting: Render Static Site (dist folder).
+- Integration: Connected to live FastAPI backend on Render via HTTPS.
+--------------------------------------------------------------------------------
