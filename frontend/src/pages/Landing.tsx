@@ -33,7 +33,7 @@ const Landing = ({ onStart }: LandingProps) => {
               <span className="text-medical-600">Nutritional Health</span>
             </h1>
             <p className="text-lg text-slate-600 leading-relaxed">
-              Developed by <span className="text-slate-900 font-semibold">Victor Mwendia Macharia</span> under the supervision of <span className="text-slate-900 font-semibold">Dr. Monica</span>. 
+              Developed by <span className="text-slate-900 font-semibold">Victor Mwendia Macharia</span> under the supervision of <span className="text-slate-900 font-semibold">Dr. Amos Ronoh</span>. 
               Our CDSS (Clinical Decision Support System) leverages machine learning to detect nutrient deficiencies before clinical symptoms manifest.
             </p>
             
