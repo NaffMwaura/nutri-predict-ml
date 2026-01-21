@@ -1,7 +1,7 @@
 PROJECT TITLE: Using machine learning to predict nutritional deficiencies based on 
                an individual’s health history, dietary intake, and biomarkers.
 STUDENT: [Victor Mwendia Macharia] 
-SUPERVISOR: Dr. Monica
+SUPERVISOR: Dr. Amos Ronoh
 DATE: January 2026
 
 --------------------------------------------------------------------------------
