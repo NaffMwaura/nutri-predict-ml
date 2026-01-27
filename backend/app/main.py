@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Literal, List
 import joblib
 import pandas as pd
+from dotenv import load_dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai 
@@ -22,9 +23,13 @@ app.add_middleware(
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'nutrition_model1.pkl')
 model = joblib.load(MODEL_PATH)
 
+
+# --- Load Environment Variables ---
+load_dotenv()
 # --- Gemini AI Setup ---
 # Switch to the async-enabled client configuration
-client = genai.Client(api_key="AIzaSyDjasFaK2iRdP7NAffZui2X0pszif0qz6s")
+api_key = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=api_key)
 MODEL_ID = "gemini-2.0-flash-lite"
 
 @retry(
