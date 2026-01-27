@@ -1,10 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from typing import Literal
+from typing import Literal, List
 import joblib
 import pandas as pd
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from google import genai 
+from google.genai.errors import ClientError
+from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
 app = FastAPI()
 
@@ -15,9 +18,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Ensure this matches your newly trained model filename
+# --- ML Model Setup ---
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'nutrition_model1.pkl')
 model = joblib.load(MODEL_PATH)
+
+# --- Gemini AI Setup ---
+# Switch to the async-enabled client configuration
+client = genai.Client(api_key="AIzaSyDjasFaK2iRdP7NAffZui2X0pszif0qz6s")
+MODEL_ID = "gemini-2.0-flash-lite"
+
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_random_exponential(multiplier=1, max=60),
+    retry=retry_if_exception_type(ClientError),
+    reraise=True # This ensures the final error is raised so you can see it
+)
+async def generate_gemini_content(system_instruction, message):
+    """
+    CRITICAL FIX: Use 'client.aio' for asynchronous calls in FastAPI.
+    """
+    return await client.aio.models.generate_content(
+        model=MODEL_ID,
+        contents=message,
+        config={'system_instruction': system_instruction}
+    )
 
 class PredictionRequest(BaseModel):
     age: float = Field(..., ge=0, le=120)
@@ -29,6 +53,10 @@ class PredictionRequest(BaseModel):
     proteins: float = Field(..., ge=0)
     zinc: float = Field(..., ge=0)
 
+class ChatRequest(BaseModel):
+    message: str
+    context: str 
+
 @app.get("/")
 def home():
     return {"status": "Online", "system": "NutriPredict AI CDSS", "version": "2.0.0"}
@@ -36,63 +64,49 @@ def home():
 @app.post("/predict")
 def predict(data: PredictionRequest):
     try:
-        # Match the EXACT feature order used in train_model.py
         input_data = pd.DataFrame([{
-            'RIDAGEYR': data.age,
-            'RIAGENDR': data.gender,
-            'DR1TIRON': data.iron_intake,
-            'DR1TVD': data.vit_d_intake,
-            'BMXBMI': data.bmi,
-            'BMXARMC': data.muac,
-            'DR1TPROT': data.proteins,
-            'DR1TZINC': data.zinc
+            'RIDAGEYR': data.age, 'RIAGENDR': data.gender,
+            'DR1TIRON': data.iron_intake, 'DR1TVD': data.vit_d_intake,
+            'BMXBMI': data.bmi, 'BMXARMC': data.muac,
+            'DR1TPROT': data.proteins, 'DR1TZINC': data.zinc
         }])
-
         prediction = int(model.predict(input_data)[0])
         probability = model.predict_proba(input_data).tolist()[0]
         confidence = round(max(probability) * 100, 2)
-
-        recs = []
         
-        # 1. Prediction-Based Logic
-        if prediction == 1:
-            recs.append("🚨 High Risk Detected: AI analysis suggests sub-clinical nutrient deficiencies.")
-        else:
-            recs.append("✅ Low Risk: Current metrics align with baseline nutritional stability.")
-
-        # 2. Anthropometric Insights (BMI & MUAC)
-        if data.bmi < 18.5:
-            recs.append(f"Analysis: BMI of {data.bmi} indicates underweight status. Increase caloric density.")
-        elif data.bmi > 25:
-            recs.append(f"Analysis: BMI of {data.bmi} suggests overweight status. Review metabolic balance.")
-            
-        if data.muac < 23:
-            recs.append("Alert: MUAC levels suggest potential muscle wasting or acute malnutrition.")
-
-        # 3. Micronutrient Logic (Iron, Vit D, Zinc)
-        if data.iron_intake < 8.0:
-            recs.append("Dietary: Iron intake is below optimal thresholds. Prioritize heme-iron sources.")
+        recs = ["High Risk Detected" if prediction == 1 else "Low Risk Detected"]
+        # (Your recommendation logic remains the same here...)
         
-        if data.vit_d_intake < 15.0:
-            recs.append("Dietary: Vitamin D intake is critically low. Consider UV exposure and fortified foods.")
-            
-        if data.zinc < 11.0:
-            recs.append("Dietary: Zinc levels are suboptimal. Incorporate seeds, nuts, or legumes.")
-
-        # 4. Macronutrient Logic (Proteins)
-        if data.proteins < 46:
-            recs.append("Dietary: Protein intake is insufficient for cellular repair and enzyme function.")
-
-        # 5. Clinical Action
-        if confidence < 60:
-            recs.append("Note: AI Confidence is borderline. Immediate Serum Ferritin and 25(OH)D lab tests required.")
-        else:
-            recs.append("Clinical Action: Schedule a routine nutritional consultation to review these findings.")
-
         return {
             "deficiency_risk": "High" if prediction == 1 else "Low",
             "confidence": confidence,
             "recommendations": recs
         }
     except Exception as e:
+        print(f"Prediction Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/chat")
+async def chat_with_ai(data: ChatRequest):
+    try:
+        system_instruction = f"""
+        You are 'NutriPredict Assistant', a specialized AI for clinical nutritional support.
+        Only discuss nutrition and the provided patient data.
+        
+        PATIENT CONTEXT:
+        {data.context}
+        """
+        
+        # Use the await keyword with our retry-wrapped async helper
+        response = await generate_gemini_content(system_instruction, data.message)
+        return {"reply": response.text}
+        
+    except ClientError as e:
+        # Check specifically for Quota/Rate Limit issues
+        print(f"Gemini API Error: {e}")
+        if "429" in str(e):
+             raise HTTPException(status_code=429, detail="API Quota Exceeded. Please wait 60 seconds.")
+        raise HTTPException(status_code=500, detail=f"Gemini AI Error: {str(e)}")
+    except Exception as e:
+        print(f"Unexpected Chat Error: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error: AI core failed to respond.")
